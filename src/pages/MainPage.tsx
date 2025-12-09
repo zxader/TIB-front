@@ -1,8 +1,9 @@
 import { useEffect } from "react";
-import { Search, Layers, Compass, Filter } from "lucide-react";
+import { Layers, Compass, Filter } from "lucide-react";
 import { BottomNav, DraggableBottomSheet } from "@/components/common";
 import { MapView } from "@/components/map/MapView";
 import { useMapStore, useBottomSheetStore } from "@/store";
+import { SearchBar } from "@/components/map/SearchBar";
 
 // 더미 데이터
 const dummySpot = {
@@ -33,15 +34,7 @@ export const MainPage = () => {
       <MapView />
 
       {/* 검색바 */}
-      <div className="absolute top-10 left-4 right-4 z-30">
-        <div className="flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl shadow-lg">
-          <Search size={20} className="text-gray-400" />
-          <span className="flex-1 text-gray-400">관광지, 영상 검색...</span>
-          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-            <span className="text-xs font-bold text-gray-600">EN</span>
-          </div>
-        </div>
-      </div>
+      <SearchBar />
 
       {/* 우측 컨트롤 */}
       <div className="absolute top-32 right-4 flex flex-col gap-2 z-30">
@@ -59,16 +52,28 @@ export const MainPage = () => {
           <Filter size={12} /> 필터
         </button>
         <button
-          onClick={() => setFilters({ weather: filters.weather === "sunny" ? null : "sunny" })}
+          onClick={() =>
+            setFilters({
+              weather: filters.weather === "sunny" ? null : "sunny",
+            })
+          }
           className={`px-3 py-2 rounded-full shadow-md text-xs font-medium ${
-            filters.weather === "sunny" ? "bg-emerald-500 text-white" : "bg-white text-gray-700"
+            filters.weather === "sunny"
+              ? "bg-emerald-500 text-white"
+              : "bg-white text-gray-700"
           }`}>
           ☀️ 맑음
         </button>
         <button
-          onClick={() => setFilters({ season: filters.season === "spring" ? null : "spring" })}
+          onClick={() =>
+            setFilters({
+              season: filters.season === "spring" ? null : "spring",
+            })
+          }
           className={`px-3 py-2 rounded-full shadow-md text-xs font-medium ${
-            filters.season === "spring" ? "bg-emerald-500 text-white" : "bg-white text-gray-700"
+            filters.season === "spring"
+              ? "bg-emerald-500 text-white"
+              : "bg-white text-gray-700"
           }`}>
           🌸 봄
         </button>
