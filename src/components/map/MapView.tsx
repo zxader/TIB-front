@@ -38,7 +38,7 @@ export const MapView = () => {
     document.head.appendChild(script);
   }, []);
 
-// 지도 초기화 함수
+  // 지도 초기화 함수
   const initMap = () => {
     if (!mapRef.current) return;
 
