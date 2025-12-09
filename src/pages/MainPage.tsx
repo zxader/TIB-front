@@ -1,9 +1,10 @@
 import { useEffect } from "react";
-import { Layers, Compass, Filter } from "lucide-react";
+import { Layers, Compass } from "lucide-react";
 import { BottomNav, DraggableBottomSheet } from "@/components/common";
 import { MapView } from "@/components/map/MapView";
-import { useMapStore, useBottomSheetStore } from "@/store";
+import { useBottomSheetStore } from "@/store";
 import { SearchBar } from "@/components/map/SearchBar";
+import { FilterButtons } from "@/components/map/FilterButtons";
 
 // 더미 데이터
 const dummySpot = {
@@ -19,7 +20,6 @@ const dummySpot = {
 };
 
 export const MainPage = () => {
-  const { filters, setFilters } = useMapStore();
   const { setSpot, setState } = useBottomSheetStore();
 
   // 페이지 로드 시 더미 데이터 설정
@@ -47,37 +47,7 @@ export const MainPage = () => {
       </div>
 
       {/* 필터 */}
-      <div className="absolute top-28 left-4 flex gap-2 z-30">
-        <button className="px-3 py-2 bg-white rounded-full shadow-md text-xs font-medium text-gray-700 flex items-center gap-1">
-          <Filter size={12} /> 필터
-        </button>
-        <button
-          onClick={() =>
-            setFilters({
-              weather: filters.weather === "sunny" ? null : "sunny",
-            })
-          }
-          className={`px-3 py-2 rounded-full shadow-md text-xs font-medium ${
-            filters.weather === "sunny"
-              ? "bg-emerald-500 text-white"
-              : "bg-white text-gray-700"
-          }`}>
-          ☀️ 맑음
-        </button>
-        <button
-          onClick={() =>
-            setFilters({
-              season: filters.season === "spring" ? null : "spring",
-            })
-          }
-          className={`px-3 py-2 rounded-full shadow-md text-xs font-medium ${
-            filters.season === "spring"
-              ? "bg-emerald-500 text-white"
-              : "bg-white text-gray-700"
-          }`}>
-          🌸 봄
-        </button>
-      </div>
+      <FilterButtons />
 
       {/* 바텀시트 */}
       <DraggableBottomSheet />

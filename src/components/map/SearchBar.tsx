@@ -4,10 +4,13 @@ import { useMapStore } from "@/store";
 import type { TouristSpot } from "@/types";
 
 export const SearchBar = () => {
-  const [keyword, setKeyword] = useState("");
-  const { filters, setPlaces } = useMapStore();
+  const [inputValue, setInputValue] = useState("");
+  const { setKeyword, setPlaces } = useMapStore();
 
   const handleSearch = () => {
+    setKeyword(inputValue);
+    console.log("검색:", { inputValue });
+
     // API 호출
     const mockResults: TouristSpot[] = [
       {
@@ -44,7 +47,6 @@ export const SearchBar = () => {
         shortsCount: 15,
       },
     ];
-    console.log("검색:", { keyword, filters });
     setPlaces(mockResults);
   };
 
@@ -54,8 +56,8 @@ export const SearchBar = () => {
         <Search size={20} className="text-gray-400" />
         <input
           type="text"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           placeholder="관광지, 영상 검색..."
           className="flex-1 outline-none bg-transparent"

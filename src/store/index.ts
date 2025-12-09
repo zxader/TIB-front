@@ -1,5 +1,11 @@
-import { create } from 'zustand';
-import type { BottomSheetState, Weather, Season, TouristSpot, VideoMetadata } from '@/types';
+import { create } from "zustand";
+import type {
+  BottomSheetState,
+  Weather,
+  Season,
+  TouristSpot,
+  VideoMetadata,
+} from "@/types";
 
 // 지도 상태
 interface MapStore {
@@ -9,13 +15,16 @@ interface MapStore {
   filters: {
     weather: Weather | null;
     season: Season | null;
+    time: string | null;
   };
-  places: TouristSpot[]
-  setPlaces: (places: TouristSpot[]) => void 
+  places: TouristSpot[];
+  keyword: string;
+  setKeyword: (keyword: string) => void;
+  setPlaces: (places: TouristSpot[]) => void;
   setCenter: (lat: number, lng: number) => void;
   setZoom: (zoom: number) => void;
   setSelectedSpot: (id: string | null) => void;
-  setFilters: (filters: Partial<MapStore['filters']>) => void;
+  setFilters: (filters: Partial<MapStore["filters"]>) => void;
 }
 
 export const useMapStore = create<MapStore>((set) => ({
@@ -25,15 +34,19 @@ export const useMapStore = create<MapStore>((set) => ({
   filters: {
     weather: null,
     season: null,
+    time: null,
   },
   places: [],
+  keyword: "",
+  setKeyword: (keyword) => set({ keyword }),
   setPlaces: (places) => set({ places }),
   setCenter: (lat, lng) => set({ center: { lat, lng } }),
   setZoom: (zoom) => set({ zoom }),
   setSelectedSpot: (id) => set({ selectedSpotId: id }),
-  setFilters: (filters) => set((state) => ({ 
-    filters: { ...state.filters, ...filters } 
-  })),
+  setFilters: (filters) =>
+    set((state) => ({
+      filters: { ...state.filters, ...filters },
+    })),
 }));
 
 // 바텀시트 상태
@@ -47,12 +60,12 @@ interface BottomSheetStore {
 }
 
 export const useBottomSheetStore = create<BottomSheetStore>((set) => ({
-  state: 'min',
+  state: "min",
   spot: null,
   setState: (state) => set({ state }),
   setSpot: (spot) => set({ spot }),
-  open: (spot) => set({ spot, state: 'middle' }),
-  close: () => set({ spot: null, state: 'min' }),
+  open: (spot) => set({ spot, state: "middle" }),
+  close: () => set({ spot: null, state: "min" }),
 }));
 
 // 플레이어 상태
@@ -108,7 +121,7 @@ export const useUploadStore = create<UploadStore>((set) => ({
   spotId: null,
   weather: null,
   season: null,
-  title: '',
+  title: "",
   isUploading: false,
   progress: 0,
   setStep: (step) => set({ step }),
@@ -120,15 +133,16 @@ export const useUploadStore = create<UploadStore>((set) => ({
   setTitle: (title) => set({ title }),
   setProgress: (progress) => set({ progress }),
   setIsUploading: (isUploading) => set({ isUploading }),
-  reset: () => set({
-    step: 1,
-    file: null,
-    metadata: null,
-    spotId: null,
-    weather: null,
-    season: null,
-    title: '',
-    isUploading: false,
-    progress: 0,
-  }),
+  reset: () =>
+    set({
+      step: 1,
+      file: null,
+      metadata: null,
+      spotId: null,
+      weather: null,
+      season: null,
+      title: "",
+      isUploading: false,
+      progress: 0,
+    }),
 }));
