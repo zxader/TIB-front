@@ -3,6 +3,23 @@ import type { Weather, Season, TouristSpot } from "@/types";
 import { useBottomSheetStore } from "@/store";
 import { attractionApi } from "@/api";
 
+const RADIUS_BY_ZOOM: Record<number, number> = {
+  1: 100,
+  2: 200,
+  3: 500,
+  4: 1000,
+  5: 2000,
+  6: 3000,
+  7: 5000,
+  8: 10000,
+  9: 20000,
+  10: 30000,
+  11: 50000,
+  12: 70000,
+  13: 100000,
+  14: 150000,
+};
+
 interface MapStore {
   center: { lat: number; lng: number };
   zoom: number;
@@ -53,14 +70,34 @@ export const useMapStore = create<MapStore>((set, get) => ({
     })),
 
   fetchNearbyPlaces: async () => {
-    const { center } = get();
+    const { center, zoom } = get();
+    const radius = RADIUS_BY_ZOOM[zoom] || 5000;
     useBottomSheetStore.getState().setMode("nearby");
     useBottomSheetStore.getState().setState("middle");
 
     set({ isLoading: true });
     try {
-      const { data } = await attractionApi.getNearby(center.lat, center.lng);
-      set({ places: data });
+      const { data } = await attractionApi.getNearby({
+        latitude: center.lat,
+        longitude: center.lng,
+        radius,
+      });
+      console.log("api호출: " + data);
+
+      const places: TouristSpot[] = data.attractions.map((item) => ({
+        id: String(item.contentId),
+        name: item.title,
+        address: `${item.sidoName} ${item.gugunName}`,
+        description: item.overview,
+        thumbnailUrl: item.firstImage,
+        latitude: data.center.latitude,
+        longitude: data.center.longitude,
+        shortsCount: item.shortsCount,
+        category: item.contentTypeName,
+      }));
+
+      console.log("places변환:", places);
+      set({ places });
     } catch (error) {
       console.error(error);
     } finally {
@@ -113,14 +150,16 @@ export const useMapStore = create<MapStore>((set, get) => ({
   },
   fetchSelectPlace: (place) => {
     set({
-      center: { lat: place.latitude, lng: place.longitude },
       places: [place],
-      zoom: 4,
       keyword: place.name,
       isSearchOpen: false,
     });
+
     useBottomSheetStore.getState().setSpot(place);
     useBottomSheetStore.getState().setMode("spot");
     useBottomSheetStore.getState().setState("middle");
+    if (window.moveMapTo) {
+      window.moveMapTo(place.latitude, place.longitude, 4);
+    }
   },
 }));
