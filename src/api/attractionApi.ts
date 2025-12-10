@@ -1,7 +1,10 @@
 // api/attractionApi.ts
 import axios from "axios";
-import type { TouristSpot } from "@/types";
-import type { NearbyResponse } from "@/types";
+import type {
+  NearbyResponse,
+  SearchResponse,
+  AttractionDetailResponse,
+} from "@/types";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -19,14 +22,12 @@ export const attractionApi = {
     }),
 
   // 검색
-  search: (keyword: string) =>
-    axios.get<TouristSpot[]>(`${BASE_URL}/attractions/search`, {
-      params: { keyword },
-    }),
+  getDetail: (contentId: number) =>
+    axios.get<AttractionDetailResponse>(`${BASE_URL}/attractions/${contentId}`),
 
   // 관광지 리스트 조회
-  getList: (page: number = 1, limit: number = 20) =>
-    axios.get<TouristSpot[]>(`${BASE_URL}/attractions`, {
-      params: { page, limit },
+  getList: (keyword: string) =>
+    axios.get<SearchResponse>(`${BASE_URL}/attractions/search`, {
+      params: { keyword },
     }),
 };
