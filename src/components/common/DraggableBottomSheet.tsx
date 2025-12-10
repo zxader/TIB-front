@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { ChevronUp, MapPin, Navigation, Share2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useBottomSheetStore } from "@/store";
@@ -8,18 +9,37 @@ import { dummyShorts, getShortsBySpotId } from "@/data/dummyData";
 export const DraggableBottomSheet = () => {
   const navigate = useNavigate();
   const { spot } = useBottomSheetStore();
-  const { state, currentHeight, handlers } = useBottomSheet("middle");
+  const { state, currentHeight, isDragging, handlers } = useBottomSheet("middle");
 
   // 관광지별 영상 가져오기 (더미)
   const shorts = spot ? getShortsBySpotId(spot.id) : dummyShorts.slice(0, 4);
 
+  // 드래그 중일 때 document 레벨에서 이벤트 처리
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      handlers.onMouseMove({ clientY: e.clientY } as React.MouseEvent);
+    };
+
+    const handleMouseUp = () => {
+      handlers.onMouseUp();
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging, handlers]);
+
   const handleViewAll = () => {
-    // 그리드 목록 페이지로 이동
     navigate(`/shorts?spotId=${spot?.id || "1"}`);
   };
 
   const handleShortsClick = (index: number) => {
-    // 클릭한 영상부터 재생
     navigate("/shorts/viewer", {
       state: {
         startIndex: index,
@@ -34,7 +54,12 @@ export const DraggableBottomSheet = () => {
       className="fixed bottom-16 left-0 right-0 bg-white rounded-t-3xl shadow-2xl z-40 transition-all duration-300 ease-out overflow-hidden"
       style={{ height: currentHeight }}>
       {/* 드래그 핸들 */}
-      <div className="w-full py-3 cursor-grab active:cursor-grabbing" {...handlers}>
+      <div
+        className="w-full py-3 cursor-grab active:cursor-grabbing"
+        onMouseDown={handlers.onMouseDown}
+        onTouchStart={handlers.onTouchStart}
+        onTouchMove={handlers.onTouchMove}
+        onTouchEnd={handlers.onTouchEnd}>
         <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto" />
       </div>
 
