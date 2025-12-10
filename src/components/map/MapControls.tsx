@@ -3,15 +3,10 @@ import { useBottomSheetStore, useMapStore } from "@/store";
 
 export const MapControls = () => {
   const { setState } = useBottomSheetStore();
-  const { center, setPlaces } = useMapStore();
+  const { center, setPlaces, fetchNearbyPlaces } = useMapStore();
 
   const handleNearbySpots = () => {
-    // setMode("nearby");
-    setState("middle");
-    // API 호출
-    // const data = await fetchNearbySpots(center.lat, center.lng);
-    // setPlaces(data);
-    console.log("주변 관광지 출력");
+    fetchNearbyPlaces(center.lat, center.lng);
   };
 
   return (

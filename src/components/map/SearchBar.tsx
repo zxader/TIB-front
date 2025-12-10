@@ -1,31 +1,14 @@
 import { useState } from "react";
 import { Search } from "lucide-react";
 import { useMapStore } from "@/store";
-import type { TouristSpot } from "@/types";
 
 export const SearchBar = () => {
   const [inputValue, setInputValue] = useState("");
-  const { setKeyword, setPlaces } = useMapStore();
+  const { fetchSearchPlaces } = useMapStore();
 
   const handleSearch = () => {
-    setKeyword(inputValue);
+    fetchSearchPlaces(inputValue);
     console.log("검색:", { inputValue });
-
-    // API 호출
-    const mockResults: TouristSpot[] = [
-      {
-        id: "1",
-        name: "감천문화마을",
-        latitude: 35.0975,
-        longitude: 129.0108,
-        address: "부산 사하구 감내2로 203",
-        description: "알록달록 벽화마을",
-        thumbnailUrl: "",
-        tags: ["마을", "사진"],
-        shortsCount: 30,
-      },
-    ];
-    setPlaces(mockResults);
   };
 
   return (

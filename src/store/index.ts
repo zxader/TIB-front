@@ -13,6 +13,8 @@ export { useMapStore } from "./mapStore";
 interface BottomSheetStore {
   state: BottomSheetState;
   spot: TouristSpot | null;
+  mode: "spot" | "nearby" | "search";
+  setMode: (mode: "spot" | "nearby" | "search") => void;
   setState: (state: BottomSheetState) => void;
   setSpot: (spot: TouristSpot | null) => void;
   open: (spot: TouristSpot) => void;
@@ -22,6 +24,8 @@ interface BottomSheetStore {
 export const useBottomSheetStore = create<BottomSheetStore>((set) => ({
   state: "min",
   spot: null,
+  mode: "spot",
+  setMode: (mode) => set({ mode }),
   setState: (state) => set({ state }),
   setSpot: (spot) => set({ spot }),
   open: (spot) => set({ spot, state: "middle" }),
