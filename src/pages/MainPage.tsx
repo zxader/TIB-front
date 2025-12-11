@@ -32,7 +32,6 @@ export const MainPage = () => {
   const navigate = useNavigate();
   const { spot, setSpot, setState, mode, setMode } = useBottomSheetStore();
   // 관광지별 영상
-  const shorts = spot ? getShortsBySpotId(spot.id) : dummyShorts.slice(0, 4);
 
   // 페이지 로드 시 더미 데이터 설정
   useEffect(() => {
@@ -83,11 +82,7 @@ export const MainPage = () => {
           )
         }
       >
-        <ShortsGrid
-          shorts={shorts}
-          onViewAll={handleViewAll}
-          onItemClick={handleShortsClick}
-        />
+        <ShortsGrid onViewAll={handleViewAll} onItemClick={handleShortsClick} />
       </DraggableBottomSheet>
 
       {/* 하단 네비게이션 */}

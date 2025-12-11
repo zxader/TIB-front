@@ -51,7 +51,7 @@ export const shortsApi = {
         searchParams.set(key, String(value));
       }
     });
-
+    console.log(params);
     const res = await fetch(`${API_BASE}/shorts?${searchParams}`);
     if (!res.ok) throw new Error("숏츠 목록 조회 실패");
     return res.json();
@@ -60,13 +60,17 @@ export const shortsApi = {
   // 상세 조회
   getDetail: async (id: string): Promise<Shorts> => {
     const userIdentifier = getUserIdentifier();
-    const res = await fetch(`${API_BASE}/shorts/${id}?userIdentifier=${userIdentifier}`);
+    const res = await fetch(
+      `${API_BASE}/shorts/${id}?userIdentifier=${userIdentifier}`
+    );
     if (!res.ok) throw new Error("숏츠 상세 조회 실패");
     return res.json();
   },
 
   // 좋아요 토글
-  toggleLike: async (id: string): Promise<{ shortsId: number; liked: boolean; good: number }> => {
+  toggleLike: async (
+    id: string
+  ): Promise<{ shortsId: number; liked: boolean; good: number }> => {
     const res = await fetch(`${API_BASE}/shorts/${id}/likes`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -77,7 +81,9 @@ export const shortsApi = {
   },
 
   // 조회수 증가
-  increaseViews: async (id: string): Promise<{ id: number; readcount: number }> => {
+  increaseViews: async (
+    id: string
+  ): Promise<{ id: number; readcount: number }> => {
     const res = await fetch(`${API_BASE}/shorts/${id}/views`, {
       method: "POST",
     });
