@@ -83,7 +83,7 @@ export const useMapStore = create<MapStore>((set, get) => ({
         radius,
       });
 
-      console.log("api호출: " + data);
+      console.log("api호출: ", data);
 
       const places: TouristSpot[] = data.attractions.map((item) => ({
         id: String(item.contentId),
@@ -91,8 +91,8 @@ export const useMapStore = create<MapStore>((set, get) => ({
         address: `${item.sidoName} ${item.gugunName}`,
         description: item.overview,
         thumbnailUrl: item.firstImage,
-        latitude: data.center.latitude,
-        longitude: data.center.longitude,
+        latitude: item.latitude,
+        longitude: item.longitude,
         shortsCount: item.shortsCount,
         category: item.contentTypeName,
       }));
