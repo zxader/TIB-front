@@ -35,7 +35,9 @@ export const ShortsViewerPage = () => {
     district?: string;
   } | null;
 
-  const [shortsList, setShortsList] = useState<Shorts[]>(state?.shortsList || []);
+  const [shortsList, setShortsList] = useState<Shorts[]>(
+    state?.shortsList || []
+  );
   const [activeIndex, setActiveIndex] = useState(state?.startIndex || 0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
@@ -137,8 +139,9 @@ export const ShortsViewerPage = () => {
   const toggleLike = async (id: number) => {
     try {
       const res = await shortsApi.toggleLike(id);
+      console.log("API 응답:", res);
       setLikes((prev) => ({ ...prev, [id]: res.liked }));
-      setLikeCounts((prev) => ({ ...prev, [id]: res.good }));
+      setLikeCounts((prev) => ({ ...prev, [id]: res.goodCount }));
     } catch (err) {
       console.error("좋아요 실패:", err);
     }
@@ -159,7 +162,8 @@ export const ShortsViewerPage = () => {
   // 영상 URL 가져오기 (없거나 에러면 폴백)
   const getVideoUrl = (shorts: Shorts) => {
     if (videoErrors[shorts.id]) return FALLBACK_VIDEO;
-    if (!shorts.video || shorts.video.includes("dummy-bucket")) return FALLBACK_VIDEO;
+    if (!shorts.video || shorts.video.includes("dummy-bucket"))
+      return FALLBACK_VIDEO;
     return shorts.video;
   };
 
@@ -197,7 +201,8 @@ export const ShortsViewerPage = () => {
             onSwiper={(swiper) => (swiperRef.current = swiper)}
             onSlideChange={handleSlideChange}
             slidesPerView={1}
-            className="h-full w-full">
+            className="h-full w-full"
+          >
             {shortsList.map((shorts, index) => (
               <SwiperSlide key={shorts.id}>
                 <div className="relative w-full h-full" onClick={togglePlay}>
@@ -238,7 +243,11 @@ export const ShortsViewerPage = () => {
                   {!isPlaying && activeIndex === index && (
                     <div className="absolute inset-0 flex items-center justify-center z-10">
                       <div className="w-20 h-20 bg-white/20 backdrop-blur rounded-full flex items-center justify-center">
-                        <Play size={40} className="text-white ml-1" fill="white" />
+                        <Play
+                          size={40}
+                          className="text-white ml-1"
+                          fill="white"
+                        />
                       </div>
                     </div>
                   )}
@@ -258,14 +267,17 @@ export const ShortsViewerPage = () => {
             <div className="flex items-center justify-between">
               <button
                 onClick={() => navigate(-1)}
-                className="w-10 h-10 bg-black/30 backdrop-blur rounded-full flex items-center justify-center">
+                className="w-10 h-10 bg-black/30 backdrop-blur rounded-full flex items-center justify-center"
+              >
                 <ArrowLeft size={22} className="text-white" />
               </button>
               <div className="flex items-center gap-2">
                 {currentShorts.weather && (
                   <WeatherBadge weather={currentShorts.weather} size="sm" />
                 )}
-                {currentShorts.season && <SeasonBadge season={currentShorts.season} size="sm" />}
+                {currentShorts.season && (
+                  <SeasonBadge season={currentShorts.season} size="sm" />
+                )}
               </div>
             </div>
           </div>
@@ -274,16 +286,21 @@ export const ShortsViewerPage = () => {
           <div className="absolute right-4 bottom-28 flex flex-col items-center gap-5 z-20">
             <button
               onClick={() => toggleLike(currentShorts.id)}
-              className="flex flex-col items-center gap-1">
+              className="flex flex-col items-center gap-1"
+            >
               <div className="w-12 h-12 bg-black/30 backdrop-blur rounded-full flex items-center justify-center">
                 <Heart
                   size={24}
-                  className={likes[currentShorts.id] ? "text-red-500" : "text-white"}
+                  className={
+                    likes[currentShorts.id] ? "text-red-500" : "text-white"
+                  }
                   fill={likes[currentShorts.id] ? "currentColor" : "none"}
                 />
               </div>
               <span className="text-white text-xs font-medium">
-                {formatCount(likeCounts[currentShorts.id] || currentShorts.good)}
+                {formatCount(
+                  likeCounts[currentShorts.id] || currentShorts.good
+                )}
               </span>
             </button>
 
@@ -294,7 +311,10 @@ export const ShortsViewerPage = () => {
               <span className="text-white text-xs font-medium">공유</span>
             </button>
 
-            <button onClick={handleLocationClick} className="flex flex-col items-center gap-1">
+            <button
+              onClick={handleLocationClick}
+              className="flex flex-col items-center gap-1"
+            >
               <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center">
                 <MapPin size={24} className="text-white" />
               </div>
@@ -303,7 +323,8 @@ export const ShortsViewerPage = () => {
 
             <button
               onClick={() => setIsMuted(!isMuted)}
-              className="flex flex-col items-center gap-1">
+              className="flex flex-col items-center gap-1"
+            >
               <div className="w-12 h-12 bg-black/30 backdrop-blur rounded-full flex items-center justify-center">
                 {isMuted ? (
                   <VolumeX size={24} className="text-white" />
@@ -311,19 +332,25 @@ export const ShortsViewerPage = () => {
                   <Volume2 size={24} className="text-white" />
                 )}
               </div>
-              <span className="text-white text-xs font-medium">{isMuted ? "음소거" : "소리"}</span>
+              <span className="text-white text-xs font-medium">
+                {isMuted ? "음소거" : "소리"}
+              </span>
             </button>
           </div>
 
           {/* 하단 정보 */}
           <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-20">
-            <h2 className="text-white text-xl font-bold mb-1">{currentShorts.title}</h2>
+            <h2 className="text-white text-xl font-bold mb-1">
+              {currentShorts.title}
+            </h2>
             {currentShorts.touristSpot && (
               <>
                 <p className="text-white/80 text-sm flex items-center gap-1 mb-2">
                   <MapPin size={14} /> {currentShorts.touristSpot.address}
                 </p>
-                <p className="text-white/60 text-sm">{currentShorts.touristSpot.description}</p>
+                <p className="text-white/60 text-sm">
+                  {currentShorts.touristSpot.description}
+                </p>
               </>
             )}
           </div>
