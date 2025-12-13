@@ -235,7 +235,7 @@ export const UploadPage = () => {
         thumbnailKey,
         name: name.trim(),
         title: title.trim(),
-        contentId: selectedSpotId || undefined,
+        contentId: selectedSpotId ?? 1,
         weather: weather || undefined,
         theme: theme || undefined,
         season: season || undefined,
