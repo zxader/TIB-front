@@ -7,7 +7,7 @@
     "dev:en": "cross-env VITE_I18N_LANG=en vite",
     "dev:zh": "cross-env VITE_I18N_LANG=zh vite",
     "dev:ja": "cross-env VITE_I18N_LANG=ja vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
     "build:en": "cross-env VITE_I18N_LANG=en vite build --outDir dist/en",
     "build:zh": "cross-env VITE_I18N_LANG=zh vite build --outDir dist/zh",
     "build:ja": "cross-env VITE_I18N_LANG=ja vite build --outDir dist/ja",
