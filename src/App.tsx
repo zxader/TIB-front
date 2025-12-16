@@ -15,11 +15,12 @@ const queryClient = new QueryClient({
     },
   },
 });
+const basename = import.meta.env.BASE_URL;
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
         <div className="w-full bg-white min-h-screen">
           <Routes>
             <Route path="/" element={<MainPage />} />
