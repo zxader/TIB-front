@@ -3,6 +3,7 @@ import { useMapStore, useBottomSheetStore } from "@/store";
 import { ShortsPreviewModal } from "@/components/shorts/ShortsPreviewModal";
 // @ts-ignore
 import createMarkerClustering from "@/lib/MarkerClustering";
+
 declare global {
   interface Window {
     naver: any;
@@ -15,25 +16,23 @@ export const MapView = () => {
   const mapInstanceRef = useRef<any>(null);
   const clustererRef = useRef<any>(null);
   const shortsMarkersRef = useRef<any[]>([]);
-  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const placeMarkersRef = useRef<any[]>([]);
+
   const {
     center,
     zoom,
     setCenter,
     setZoom,
     places,
-    fetchNearbyPlaces,
+
     shorts,
     fetchShorts,
-    hoveredShorts,
-    hoverPosition,
-    setHoveredShorts,
+
     language,
   } = useMapStore();
 
-  const { open, mode, setMode } = useBottomSheetStore();
+  const { open, mode, setMode, openShorts } = useBottomSheetStore();
 
   // 네이버맵 스크립트 로드
   useEffect(() => {
@@ -91,14 +90,6 @@ export const MapView = () => {
     });
   };
 
-  // 타이머 취소 함수
-  const cancelHoverTimeout = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-  };
-
   // 관광지 마커 + 클러스터 표시
   useEffect(() => {
     if (!mapInstanceRef.current || !isLoaded) return;
@@ -135,7 +126,6 @@ export const MapView = () => {
       clustererRef.current.setMap(null);
       clustererRef.current = null;
     }
-    // 기존 숏츠 마커 제거
     shortsMarkersRef.current.forEach((marker) => marker.setMap(null));
     shortsMarkersRef.current = [];
 
@@ -144,7 +134,7 @@ export const MapView = () => {
     // 숏츠 마커 이미지 (노란 별)
     const markerIcon = {
       url: "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
-      size: new window.naver.maps.Size(24, 35),
+      size: new window.naver.maps.Size(36, 52),
       anchor: new window.naver.maps.Point(12, 35),
     };
 
@@ -162,25 +152,9 @@ export const MapView = () => {
         map: mapInstanceRef.current,
       });
 
-      // hover - 마우스 올렸을 때
-      window.naver.maps.Event.addListener(marker, "mouseover", () => {
-        cancelHoverTimeout();
-
-        const proj = mapInstanceRef.current.getProjection();
-        const point = proj.fromCoordToOffset(position);
-        setHoveredShorts(shortsItem, { x: point.x, y: point.y });
-      });
-
-      // hover - 마우스 벗어났을 때
-      window.naver.maps.Event.addListener(marker, "mouseout", () => {
-        hoverTimeoutRef.current = setTimeout(() => {
-          setHoveredShorts(null);
-        }, 300);
-      });
-
-      // 클릭 시 뷰어로 이동
+      // 클릭 시 바텀시트에 표시
       window.naver.maps.Event.addListener(marker, "click", () => {
-        window.location.href = `/shorts/viewer?id=${shortsItem.id}`;
+        openShorts(shortsItem);
       });
 
       return marker;
@@ -228,22 +202,14 @@ export const MapView = () => {
         }
       },
     });
-  }, [isLoaded, shorts, setHoveredShorts]);
+  }, [isLoaded, shorts, openShorts]);
 
   // 데이터 로드
   useEffect(() => {
     if (isLoaded) {
-      // fetchNearbyPlaces();
       fetchShorts();
     }
   }, [isLoaded]);
-
-  // 컴포넌트 언마운트 시 타이머 정리
-  useEffect(() => {
-    return () => {
-      cancelHoverTimeout();
-    };
-  }, []);
 
   return (
     <div className="relative w-full h-full">
@@ -254,14 +220,6 @@ export const MapView = () => {
           </div>
         )}
       </div>
-
-      {/* 숏츠 프리뷰 모달 */}
-      <ShortsPreviewModal
-        shorts={hoveredShorts}
-        position={hoverPosition}
-        onClose={() => setHoveredShorts(null)}
-        onMouseEnter={cancelHoverTimeout}
-      />
     </div>
   );
 };
