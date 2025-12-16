@@ -5,20 +5,22 @@ import { attractionApi } from "@/api";
 import { shortsApi } from "@/api/shorts";
 
 const RADIUS_BY_ZOOM: Record<number, number> = {
-  1: 70,
-  2: 150,
-  3: 300,
-  4: 600,
-  5: 1100,
-  6: 2200,
-  7: 4400,
-  8: 8800,
-  9: 18000,
+  6: 576000,
+  7: 288000,
+  8: 144000,
+  9: 72000,
   10: 36000,
-  11: 72000,
-  12: 144000,
-  13: 288000,
-  14: 576000,
+  11: 18000,
+  12: 8800,
+  13: 4400,
+  14: 2200,
+  15: 1100,
+  16: 600,
+  17: 300,
+  18: 150,
+  19: 70,
+  20: 35,
+  21: 20,
 };
 
 interface MapStore {
@@ -40,6 +42,8 @@ interface MapStore {
   // interface에 추가
   hoveredShorts: Shorts | null;
   hoverPosition: { x: number; y: number } | null;
+  language: "ko" | "en" | "ja" | "zh";
+  setLanguage: (lang: "ko" | "en" | "ja" | "zh") => void;
   setHoveredShorts: (
     shorts: Shorts | null,
     position?: { x: number; y: number }
@@ -75,6 +79,13 @@ export const useMapStore = create<MapStore>((set, get) => ({
   shorts: [],
   hoveredShorts: null,
   hoverPosition: null,
+  language:
+    (localStorage.getItem("mapLanguage") as "ko" | "en" | "ja" | "zh") || "ko",
+  setLanguage: (lang) => {
+    localStorage.setItem("mapLanguage", lang);
+    set({ language: lang });
+    window.location.reload();
+  },
   setHoveredShorts: (shorts, position) =>
     set({
       hoveredShorts: shorts,

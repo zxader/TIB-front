@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useMapStore, useBottomSheetStore } from "@/store";
+import { ShortsPreviewModal } from "@/components/shorts/ShortsPreviewModal";
+// @ts-ignore
+import createMarkerClustering from "@/lib/MarkerClustering";
 
 declare global {
   interface Window {
-    kakao: any;
+    naver: any;
     moveMapTo?: (lat: number, lng: number, zoom?: number) => void;
   }
 }
@@ -15,27 +18,35 @@ export const MapView = () => {
   const shortsMarkersRef = useRef<any[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const placeMarkersRef = useRef<any[]>([]);
-  const { center, zoom, setCenter, setZoom, places, shorts, fetchShorts } = useMapStore();
+
+  const {
+    center,
+    zoom,
+    setCenter,
+    setZoom,
+    places,
+
+    shorts,
+    fetchShorts,
+
+    language,
+  } = useMapStore();
 
   const { open, mode, setMode, openShorts } = useBottomSheetStore();
 
-  // 카카오맵 스크립트 로드
+  // 네이버맵 스크립트 로드
   useEffect(() => {
-    if (window.kakao && window.kakao.maps) {
-      window.kakao.maps.load(() => {
-        initMap();
-      });
+    if (window.naver && window.naver.maps) {
+      initMap();
       return;
     }
 
     const script = document.createElement("script");
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${
-      import.meta.env.VITE_KAKAO_MAP_KEY
-    }&autoload=false&libraries=services,clusterer`;
+    script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${
+      import.meta.env.VITE_NAVER_MAP_CLIENT_ID
+    }&language=${language}`;
     script.onload = () => {
-      window.kakao.maps.load(() => {
-        initMap();
-      });
+      initMap();
     };
     document.head.appendChild(script);
   }, []);
@@ -46,50 +57,59 @@ export const MapView = () => {
     if (mapInstanceRef.current) return;
 
     const options = {
-      center: new window.kakao.maps.LatLng(center.lat, center.lng),
-      level: zoom,
+      center: new window.naver.maps.LatLng(center.lat, center.lng),
+      zoom: zoom,
+      logoControlOptions: {
+        position: window.naver.maps.Position.BOTTOM_LEFT, // 위치 변경
+      },
+      mapDataControl: false, // "© NAVER Corp. /OpenStreetMap" 텍스트 숨김 (이건 가능)
+      scaleControl: false,
     };
 
-    const map = new window.kakao.maps.Map(mapRef.current, options);
+    const map = new window.naver.maps.Map(mapRef.current, options);
     mapInstanceRef.current = map;
     setIsLoaded(true);
 
     window.moveMapTo = (lat: number, lng: number, zoomLevel?: number) => {
       setTimeout(() => {
-        const newCenter = new window.kakao.maps.LatLng(lat, lng);
+        const newCenter = new window.naver.maps.LatLng(lat, lng);
         map.setCenter(newCenter);
         if (zoomLevel) {
-          map.setLevel(zoomLevel);
+          map.setZoom(zoomLevel);
         }
       }, 100);
     };
 
-    window.kakao.maps.event.addListener(map, "center_changed", () => {
+    window.naver.maps.Event.addListener(map, "center_changed", () => {
       const latlng = map.getCenter();
-      setCenter(latlng.getLat(), latlng.getLng());
+      setCenter(latlng.lat(), latlng.lng());
     });
 
-    window.kakao.maps.event.addListener(map, "zoom_changed", () => {
-      setZoom(map.getLevel());
+    window.naver.maps.Event.addListener(map, "zoom_changed", () => {
+      setZoom(map.getZoom());
     });
   };
 
   // 관광지 마커 + 클러스터 표시
   useEffect(() => {
-    if (!mapInstanceRef.current || !isLoaded || places.length === 0) return;
+    if (!mapInstanceRef.current || !isLoaded) return;
     placeMarkersRef.current.forEach((marker) => marker.setMap(null));
     placeMarkersRef.current = [];
 
     if (mode !== "spot" || places.length === 0) return;
 
     const markers = places.map((place) => {
-      const position = new window.kakao.maps.LatLng(place.latitude, place.longitude);
+      const position = new window.naver.maps.LatLng(
+        place.latitude,
+        place.longitude
+      );
 
-      const marker = new window.kakao.maps.Marker({
+      const marker = new window.naver.maps.Marker({
         position,
+        map: mapInstanceRef.current,
       });
-      marker.setMap(mapInstanceRef.current);
-      window.kakao.maps.event.addListener(marker, "click", () => {
+
+      window.naver.maps.Event.addListener(marker, "click", () => {
         open(place);
         setMode("spot");
       });
@@ -103,44 +123,85 @@ export const MapView = () => {
   useEffect(() => {
     if (!mapInstanceRef.current || !isLoaded) return;
     if (clustererRef.current) {
-      clustererRef.current.clear();
+      clustererRef.current.setMap(null);
+      clustererRef.current = null;
     }
     shortsMarkersRef.current.forEach((marker) => marker.setMap(null));
     shortsMarkersRef.current = [];
 
     if (shorts.length === 0) return;
 
-    const markerImage = new window.kakao.maps.MarkerImage(
-      "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
-      new window.kakao.maps.Size(36, 52)
-    );
+    // 숏츠 마커 이미지 (노란 별)
+    const markerIcon = {
+      url: "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
+      size: new window.naver.maps.Size(36, 52),
+      anchor: new window.naver.maps.Point(12, 35),
+    };
 
     const validShorts = shorts.filter((s) => s.latitude && s.longitude);
 
     const markers = validShorts.map((shortsItem) => {
-      const position = new window.kakao.maps.LatLng(shortsItem.latitude, shortsItem.longitude);
+      const position = new window.naver.maps.LatLng(
+        shortsItem.latitude,
+        shortsItem.longitude
+      );
 
-      const marker = new window.kakao.maps.Marker({
+      const marker = new window.naver.maps.Marker({
         position,
-        image: markerImage,
+        icon: markerIcon,
         map: mapInstanceRef.current,
       });
 
       // 클릭 시 바텀시트에 표시
-      window.kakao.maps.event.addListener(marker, "click", () => {
+      window.naver.maps.Event.addListener(marker, "click", () => {
         openShorts(shortsItem);
       });
 
       return marker;
     });
-
-    clustererRef.current = new window.kakao.maps.MarkerClusterer({
-      map: mapInstanceRef.current,
-      averageCenter: true,
-      minLevel: 6,
-      markers: markers,
-    });
+    // clustererRef.current = new window.naver.maps.MarkerClusterer({
+    //   map: mapInstanceRef.current,
+    //   averageCenter: true,
+    //   minLevel: 6,
+    //   markers: markers,
+    // });
     shortsMarkersRef.current = markers;
+    const htmlMarker1 = {
+      content:
+        '<div style="cursor:pointer;width:40px;height:40px;line-height:42px;font-size:10px;color:white;text-align:center;font-weight:bold;background:url(https://navermaps.github.io/maps.js.ncp/docs/img/cluster-marker-1.png);background-size:contain;"></div>',
+      size: new window.naver.maps.Size(40, 40),
+      anchor: new window.naver.maps.Point(20, 20),
+    };
+    const htmlMarker2 = {
+      content:
+        '<div style="cursor:pointer;width:40px;height:40px;line-height:42px;font-size:10px;color:white;text-align:center;font-weight:bold;background:url(https://navermaps.github.io/maps.js.ncp/docs/img/cluster-marker-2.png);background-size:contain;"></div>',
+      size: new window.naver.maps.Size(40, 40),
+      anchor: new window.naver.maps.Point(20, 20),
+    };
+    const htmlMarker3 = {
+      content:
+        '<div style="cursor:pointer;width:40px;height:40px;line-height:42px;font-size:10px;color:white;text-align:center;font-weight:bold;background:url(https://navermaps.github.io/maps.js.ncp/docs/img/cluster-marker-3.png);background-size:contain;"></div>',
+      size: new window.naver.maps.Size(40, 40),
+      anchor: new window.naver.maps.Point(20, 20),
+    };
+    const MarkerClustering = createMarkerClustering(window.naver);
+    clustererRef.current = new MarkerClustering({
+      minClusterSize: 2,
+      maxZoom: 13,
+      map: mapInstanceRef.current,
+      markers: markers,
+      disableClickZoom: false,
+      gridSize: 120,
+      icons: [htmlMarker1, htmlMarker2, htmlMarker3],
+      indexGenerator: [10, 100, 200],
+      stylingFunction: (clusterMarker: any, count: number) => {
+        const element = clusterMarker.getElement();
+        if (element) {
+          const div = element.querySelector("div:first-child");
+          if (div) div.innerText = count;
+        }
+      },
+    });
   }, [isLoaded, shorts, openShorts]);
 
   // 데이터 로드
