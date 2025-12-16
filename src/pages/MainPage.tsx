@@ -13,7 +13,7 @@ import { FilterButtons } from "@/components/map/FilterButtons";
 import { useNavigate } from "react-router-dom";
 import { dummyShorts, getShortsBySpotId } from "@/data/dummyData";
 import { MapControls } from "@/components/map/MapControls";
-
+import { LanguageSelector } from "@/components/map/LanguageSelector";
 // 더미 데이터
 const dummySpot = {
   id: "1",
