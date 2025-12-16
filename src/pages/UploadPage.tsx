@@ -20,12 +20,12 @@ import {
 import { useUploadStore } from "@/store";
 import { useVideoMetadata } from "@/hooks";
 import { shortsApi } from "@/api/shorts";
+import { getWeatherByDate, type WeatherInfo } from "@/api/weather";
+
+const [weatherInfo, setWeatherInfo] = useState<WeatherInfo | null>(null);
 import type { Theme, NearbyAttraction, Weather, Season } from "@/types";
 
-const getAddressFromCoords = async (
-  lat: number,
-  lng: number
-): Promise<string> => {
+const getAddressFromCoords = async (lat: number, lng: number): Promise<string> => {
   try {
     const addressRes = await fetch(
       `https://dapi.kakao.com/v2/local/geo/coord2address.json?x=${lng}&y=${lat}`,
@@ -98,9 +98,7 @@ export const UploadPage = () => {
 
   const { extractMetadata, extractThumbnail } = useVideoMetadata();
   const [thumbnail, setThumbnail] = useState<string | null>(null);
-  const [extractedLocation, setExtractedLocation] = useState<string | null>(
-    null
-  );
+  const [extractedLocation, setExtractedLocation] = useState<string | null>(null);
   const [extractedDate, setExtractedDate] = useState<string | null>(null);
   const [nearbySpots, setNearbySpots] = useState<NearbyAttraction[]>([]);
   const [selectedSpotId, setSelectedSpotId] = useState<number | null>(null);
@@ -130,10 +128,7 @@ export const UploadPage = () => {
         setMetadata(meta);
 
         if (meta.latitude && meta.longitude) {
-          const address = await getAddressFromCoords(
-            meta.latitude,
-            meta.longitude
-          );
+          const address = await getAddressFromCoords(meta.latitude, meta.longitude);
           setExtractedLocation(address);
 
           try {
@@ -172,21 +167,29 @@ export const UploadPage = () => {
         } catch (err) {
           console.warn("썸네일 추출 실패:", err);
         }
-
+        // 날씨 자동 조회
+        if (meta.latitude && meta.longitude && meta.createdAt) {
+          try {
+            const info = await getWeatherByDate(
+              meta.latitude,
+              meta.longitude,
+              new Date(meta.createdAt)
+            );
+            if (info) {
+              setWeatherInfo(info);
+              setWeather(info.weather);
+            }
+          } catch (err) {
+            console.warn("날씨 자동 감지 실패:", err);
+          }
+        }
         setStep(2);
       } catch (err) {
         console.error("메타데이터 추출 실패:", err);
         alert("파일을 읽을 수 없습니다.");
       }
     },
-    [
-      extractMetadata,
-      extractThumbnail,
-      setFile,
-      setMetadata,
-      setStep,
-      setSeason,
-    ]
+    [extractMetadata, extractThumbnail, setFile, setMetadata, setStep, setSeason]
   );
 
   const handleAddHashtag = () => {
@@ -235,7 +238,7 @@ export const UploadPage = () => {
         thumbnailKey,
         name: name.trim(),
         title: title.trim(),
-        contentId: selectedSpotId ?? 1,
+        contentId: selectedSpotId || undefined,
         weather: weather || undefined,
         theme: theme || undefined,
         season: season || undefined,
@@ -289,16 +292,15 @@ export const UploadPage = () => {
     { value: "Winter", label: "겨울" },
   ];
 
-  const themeOptions: { value: Theme; icon: React.ReactNode; label: string }[] =
-    [
-      { value: "NightView", icon: <Moon size={16} />, label: "야경" },
-      { value: "Ocean", icon: <Waves size={16} />, label: "바다" },
-      { value: "Mountain", icon: <Mountain size={16} />, label: "산" },
-      { value: "Cafe", icon: <Coffee size={16} />, label: "카페" },
-      { value: "Food", icon: <Utensils size={16} />, label: "맛집" },
-      { value: "Festival", icon: <PartyPopper size={16} />, label: "축제" },
-      { value: "Walk", icon: <Footprints size={16} />, label: "산책" },
-    ];
+  const themeOptions: { value: Theme; icon: React.ReactNode; label: string }[] = [
+    { value: "NightView", icon: <Moon size={16} />, label: "야경" },
+    { value: "Ocean", icon: <Waves size={16} />, label: "바다" },
+    { value: "Mountain", icon: <Mountain size={16} />, label: "산" },
+    { value: "Cafe", icon: <Coffee size={16} />, label: "카페" },
+    { value: "Food", icon: <Utensils size={16} />, label: "맛집" },
+    { value: "Festival", icon: <PartyPopper size={16} />, label: "축제" },
+    { value: "Walk", icon: <Footprints size={16} />, label: "산책" },
+  ];
 
   return (
     <div className="h-screen bg-gray-50 relative">
@@ -310,8 +312,7 @@ export const UploadPage = () => {
               reset();
               navigate(-1);
             }}
-            className="w-10 h-10 flex items-center justify-center"
-          >
+            className="w-10 h-10 flex items-center justify-center">
             <X size={24} className="text-gray-600" />
           </button>
           <h1 className="text-lg font-bold">영상 업로드</h1>
@@ -323,18 +324,13 @@ export const UploadPage = () => {
             <div key={s} className="flex-1 flex items-center gap-2">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                  step >= s
-                    ? "bg-emerald-500 text-white"
-                    : "bg-gray-200 text-gray-400"
-                }`}
-              >
+                  step >= s ? "bg-emerald-500 text-white" : "bg-gray-200 text-gray-400"
+                }`}>
                 {step > s ? <Check size={16} /> : s}
               </div>
               {s < 2 && (
                 <div
-                  className={`flex-1 h-1 rounded ${
-                    step > s ? "bg-emerald-500" : "bg-gray-200"
-                  }`}
+                  className={`flex-1 h-1 rounded ${step > s ? "bg-emerald-500" : "bg-gray-200"}`}
                 />
               )}
             </div>
@@ -346,19 +342,12 @@ export const UploadPage = () => {
       {step === 1 && (
         <div className="p-4">
           <label className="block w-full border-2 border-dashed border-gray-300 rounded-2xl p-8 cursor-pointer hover:border-emerald-500 transition-colors">
-            <input
-              type="file"
-              accept="video/*"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
+            <input type="file" accept="video/*" onChange={handleFileSelect} className="hidden" />
             <div className="flex flex-col items-center">
               <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
                 <UploadIcon size={28} className="text-emerald-500" />
               </div>
-              <p className="text-gray-900 font-bold mb-1">
-                영상을 업로드하세요
-              </p>
+              <p className="text-gray-900 font-bold mb-1">영상을 업로드하세요</p>
               <p className="text-gray-500 text-sm">MP4, MOV 최대 500MB</p>
             </div>
           </label>
@@ -373,11 +362,7 @@ export const UploadPage = () => {
             <div className="bg-white rounded-2xl p-4 mb-4">
               <p className="font-bold text-gray-900 mb-3">📹 영상 미리보기</p>
               <div className="relative aspect-video rounded-xl overflow-hidden bg-black">
-                <img
-                  src={thumbnail}
-                  alt="썸네일"
-                  className="w-full h-full object-contain"
-                />
+                <img src={thumbnail} alt="썸네일" className="w-full h-full object-contain" />
               </div>
               <p className="text-sm text-gray-500 mt-2">
                 {file?.name} ({((file?.size || 0) / 1024 / 1024).toFixed(2)} MB)
@@ -387,9 +372,7 @@ export const UploadPage = () => {
 
           {/* 자동 추출 정보 */}
           <div className="bg-emerald-50 rounded-2xl p-4 mb-4">
-            <p className="text-emerald-700 font-bold text-sm mb-3">
-              ✨ 자동 추출 정보
-            </p>
+            <p className="text-emerald-700 font-bold text-sm mb-3">✨ 자동 추출 정보</p>
             <div className="grid grid-cols-2 gap-2">
               <div className="bg-white rounded-xl p-3">
                 <p className="text-xs text-gray-500">영상 길이</p>
@@ -411,11 +394,34 @@ export const UploadPage = () => {
               </div>
               <div className="bg-white rounded-xl p-3">
                 <p className="text-xs text-gray-500">촬영 일시</p>
-                <p className="font-bold text-gray-900">
-                  {extractedDate || "-"}
-                </p>
+                <p className="font-bold text-gray-900">{extractedDate || "-"}</p>
               </div>
             </div>
+            {/* 날씨 정보 */}
+            {weatherInfo && (
+              <div className="mt-3 p-3 bg-white rounded-xl">
+                <p className="text-xs text-gray-500 mb-2">🌤 촬영일 날씨 ({weatherInfo.station})</p>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <p className="text-lg font-bold text-gray-900">{weatherInfo.avgTemp}°C</p>
+                    <p className="text-xs text-gray-500">평균</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-red-500">{weatherInfo.maxTemp}°C</p>
+                    <p className="text-xs text-gray-500">최고</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-blue-500">{weatherInfo.minTemp}°C</p>
+                    <p className="text-xs text-gray-500">최저</p>
+                  </div>
+                </div>
+                <div className="flex justify-between mt-2 text-sm text-gray-600">
+                  <span>💧 습도 {weatherInfo.humidity}%</span>
+                  <span>☀️ 일조 {weatherInfo.sunshine}h</span>
+                  {weatherInfo.rainfall > 0 && <span>🌧 강수 {weatherInfo.rainfall}mm</span>}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 닉네임 입력 */}
@@ -455,32 +461,22 @@ export const UploadPage = () => {
                       selectedSpotId === spot.contentId
                         ? "border-2 border-emerald-500 bg-emerald-50"
                         : "border border-gray-200"
-                    }`}
-                  >
+                    }`}>
                     <div className="flex items-center gap-3">
                       <div
                         className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          selectedSpotId === spot.contentId
-                            ? "bg-emerald-100"
-                            : "bg-gray-100"
-                        }`}
-                      >
+                          selectedSpotId === spot.contentId ? "bg-emerald-100" : "bg-gray-100"
+                        }`}>
                         <MapPin
                           size={20}
                           className={
-                            selectedSpotId === spot.contentId
-                              ? "text-emerald-500"
-                              : "text-gray-400"
+                            selectedSpotId === spot.contentId ? "text-emerald-500" : "text-gray-400"
                           }
                         />
                       </div>
                       <div className="text-left">
-                        <p className="font-medium text-gray-900">
-                          {spot.title}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {Math.round(spot.distance)}m 거리
-                        </p>
+                        <p className="font-medium text-gray-900">{spot.title}</p>
+                        <p className="text-xs text-gray-500">{Math.round(spot.distance)}m 거리</p>
                       </div>
                     </div>
                     {selectedSpotId === spot.contentId && (
@@ -490,9 +486,7 @@ export const UploadPage = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-sm">
-                위치 정보가 없어 관광지를 찾을 수 없습니다.
-              </p>
+              <p className="text-gray-500 text-sm">위치 정보가 없어 관광지를 찾을 수 없습니다.</p>
             )}
           </div>
 
@@ -503,15 +497,12 @@ export const UploadPage = () => {
               {themeOptions.map((opt) => (
                 <button
                   key={opt.value}
-                  onClick={() =>
-                    setTheme(theme === opt.value ? null : opt.value)
-                  }
+                  onClick={() => setTheme(theme === opt.value ? null : opt.value)}
                   className={`px-3 py-2 rounded-xl flex items-center gap-1 text-sm font-medium ${
                     theme === opt.value
                       ? "bg-purple-100 text-purple-600 border-2 border-purple-300"
                       : "bg-gray-100 text-gray-500"
-                  }`}
-                >
+                  }`}>
                   {opt.icon} {opt.label}
                 </button>
               ))}
@@ -525,17 +516,12 @@ export const UploadPage = () => {
               {weatherOptions.map((opt) => (
                 <button
                   key={opt.value}
-                  onClick={() =>
-                    setWeather(
-                      weather === opt.value ? null : (opt.value as any)
-                    )
-                  }
+                  onClick={() => setWeather(weather === opt.value ? null : (opt.value as any))}
                   className={`flex-1 py-2.5 rounded-xl flex items-center justify-center gap-1 text-sm font-medium ${
                     weather === opt.value
                       ? "bg-amber-100 text-amber-600 border-2 border-amber-300"
                       : "bg-gray-100 text-gray-500"
-                  }`}
-                >
+                  }`}>
                   {opt.icon} {opt.label}
                 </button>
               ))}
@@ -549,15 +535,12 @@ export const UploadPage = () => {
               {seasonOptions.map((opt) => (
                 <button
                   key={opt.value}
-                  onClick={() =>
-                    setSeason(season === opt.value ? null : (opt.value as any))
-                  }
+                  onClick={() => setSeason(season === opt.value ? null : (opt.value as any))}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-medium ${
                     season === opt.value
                       ? "bg-pink-100 text-pink-600 border-2 border-pink-300"
                       : "bg-gray-100 text-gray-500"
-                  }`}
-                >
+                  }`}>
                   {opt.label}
                 </button>
               ))}
@@ -578,8 +561,7 @@ export const UploadPage = () => {
               />
               <button
                 onClick={handleAddHashtag}
-                className="px-4 py-3 bg-emerald-500 text-white rounded-xl font-medium"
-              >
+                className="px-4 py-3 bg-emerald-500 text-white rounded-xl font-medium">
                 추가
               </button>
             </div>
@@ -589,8 +571,7 @@ export const UploadPage = () => {
                   <span
                     key={tag}
                     onClick={() => handleRemoveHashtag(tag)}
-                    className="px-3 py-1 bg-emerald-100 text-emerald-600 rounded-full text-sm cursor-pointer"
-                  >
+                    className="px-3 py-1 bg-emerald-100 text-emerald-600 rounded-full text-sm cursor-pointer">
                     #{tag} ×
                   </span>
                 ))}
@@ -610,17 +591,14 @@ export const UploadPage = () => {
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <p className="text-center text-sm text-gray-500">
-              업로드 중... {progress}%
-            </p>
+            <p className="text-center text-sm text-gray-500">업로드 중... {progress}%</p>
           </div>
         ) : (
           <div className="flex gap-3">
             {step > 1 && (
               <button
                 onClick={() => setStep(1)}
-                className="flex-1 py-3.5 border border-gray-300 rounded-2xl font-bold text-gray-600"
-              >
+                className="flex-1 py-3.5 border border-gray-300 rounded-2xl font-bold text-gray-600">
                 이전
               </button>
             )}
@@ -628,11 +606,8 @@ export const UploadPage = () => {
               onClick={step === 2 ? handleUpload : undefined}
               disabled={step === 2 && (!name.trim() || !title.trim())}
               className={`flex-1 py-3.5 rounded-2xl font-bold text-white ${
-                step === 2 && (!name.trim() || !title.trim())
-                  ? "bg-gray-300"
-                  : "bg-emerald-500"
-              }`}
-            >
+                step === 2 && (!name.trim() || !title.trim()) ? "bg-gray-300" : "bg-emerald-500"
+              }`}>
               업로드
             </button>
           </div>
