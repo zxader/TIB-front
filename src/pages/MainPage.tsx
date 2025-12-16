@@ -1,44 +1,14 @@
-import { useEffect, useState } from "react";
-import {
-  BottomNav,
-  DraggableBottomSheet,
-  SpotInfo,
-  ShortsGrid,
-  SpotDetail,
-} from "@/components/common";
+import { BottomNav, DraggableBottomSheet, SpotInfo, ShortsGrid } from "@/components/common";
 import { MapView } from "@/components/map/MapView";
 import { useBottomSheetStore } from "@/store";
 import { SearchBar } from "@/components/map/SearchBar";
 import { FilterButtons } from "@/components/map/FilterButtons";
 import { useNavigate } from "react-router-dom";
-import { dummyShorts, getShortsBySpotId } from "@/data/dummyData";
 import { MapControls } from "@/components/map/MapControls";
-import { LanguageSelector } from "@/components/map/LanguageSelector";
-// 더미 데이터
-const dummySpot = {
-  id: "1",
-  name: "해운대 해수욕장",
-  category: "해수욕장",
-  address: "부산광역시 해운대구 해운대해변로 264",
-  description: "부산의 대표 해변, 일출이 아름다운 곳",
-  latitude: 35.1587,
-  longitude: 129.1604,
-  thumbnailUrl: "",
-  shortsCount: 12,
-  tags: ["해변", "일출", "서핑"],
-};
 
 export const MainPage = () => {
   const navigate = useNavigate();
-  const { spot, setSpot, setState, mode, setMode } = useBottomSheetStore();
-  // 관광지별 영상
-
-  // 페이지 로드 시 더미 데이터 설정
-  useEffect(() => {
-    setSpot(dummySpot);
-    setState("middle");
-    setMode("detail");
-  }, []);
+  const { spot, mode, setMode } = useBottomSheetStore();
 
   const handleViewAll = () => {
     navigate(`/shorts?spotId=${spot?.id || "1"}`);
@@ -70,6 +40,7 @@ export const MainPage = () => {
 
       {/* 바텀시트 */}
       <DraggableBottomSheet
+        initialState="min"
         header={
           spot && (
             <SpotInfo
@@ -80,10 +51,7 @@ export const MainPage = () => {
               onDetailClick={() => setMode(mode === "spot" ? "detail" : "spot")}
             />
           )
-        }
-      >
-        <ShortsGrid onViewAll={handleViewAll} onItemClick={handleShortsClick} />
-      </DraggableBottomSheet>
+        }></DraggableBottomSheet>
 
       {/* 하단 네비게이션 */}
       <BottomNav />
