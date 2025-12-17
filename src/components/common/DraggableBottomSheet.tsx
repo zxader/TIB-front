@@ -9,7 +9,10 @@ interface DraggableBottomSheetProps {
   children?: ReactNode;
 }
 
-export const DraggableBottomSheet = ({ header, children }: DraggableBottomSheetProps) => {
+export const DraggableBottomSheet = ({
+  header,
+  children,
+}: DraggableBottomSheetProps) => {
   const { state, currentHeight, isDragging, handlers } = useBottomSheet();
   const { mode, selectedShorts } = useBottomSheetStore();
   const { searchResults, fetchSelectPlace } = useMapStore();
@@ -41,11 +44,17 @@ export const DraggableBottomSheet = ({ header, children }: DraggableBottomSheetP
       className={`fixed left-0 right-0 bg-white rounded-t-3xl shadow-2xl z-40 transition-all duration-300 ease-out overflow-hidden flex flex-col ${
         state === "max" ? "bottom-0" : "bottom-12"
       }`}
-      style={{ height: currentHeight }}>
+      style={{
+        height: currentHeight,
+        transition: isDragging ? "none" : "all 300ms ease-out",
+      }}>
       {/* 드래그 핸들 */}
       <div
         className="w-full py-2 cursor-grab active:cursor-grabbing shrink-0"
-        onMouseDown={handlers.onMouseDown}
+        onMouseDown={(e) => {
+          e.preventDefault(); // 텍스트 선택 방지
+          handlers.onMouseDown(e);
+        }}
         onTouchStart={handlers.onTouchStart}
         onTouchMove={handlers.onTouchMove}
         onTouchEnd={handlers.onTouchEnd}>
@@ -71,7 +80,10 @@ export const DraggableBottomSheet = ({ header, children }: DraggableBottomSheetP
 
       {/* 주변 관광지 모드 */}
       {mode === "nearby" && isExpanded && (
-        <div className={`px-5 flex-1 ${state === "max" ? "overflow-y-auto" : "overflow-hidden"}`}>
+        <div
+          className={`px-5 flex-1 ${
+            state === "max" ? "overflow-y-auto" : "overflow-hidden"
+          }`}>
           {children}
         </div>
       )}
@@ -82,7 +94,9 @@ export const DraggableBottomSheet = ({ header, children }: DraggableBottomSheetP
           {header && <div className="px-5 pb-3 shrink-0">{header}</div>}
           {children && isExpanded && (
             <div
-              className={`px-5 flex-1 ${state === "max" ? "overflow-y-auto" : "overflow-hidden"}`}>
+              className={`px-5 flex-1 ${
+                state === "max" ? "overflow-y-auto" : "overflow-hidden"
+              }`}>
               {children}
             </div>
           )}
