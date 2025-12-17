@@ -7,17 +7,11 @@ import { ShortsDetail } from "@/components/shorts/ShortsDetail";
 interface DraggableBottomSheetProps {
   header?: ReactNode;
   children?: ReactNode;
-  initialState?: "min" | "middle" | "max";
 }
 
-export const DraggableBottomSheet = ({
-  header,
-  children,
-  initialState = "middle",
-}: DraggableBottomSheetProps) => {
-  const { state, currentHeight, isDragging, handlers } = useBottomSheet(initialState);
-
-  const { mode, spot, selectedShorts } = useBottomSheetStore();
+export const DraggableBottomSheet = ({ header, children }: DraggableBottomSheetProps) => {
+  const { state, currentHeight, isDragging, handlers } = useBottomSheet();
+  const { mode, selectedShorts } = useBottomSheetStore();
   const { searchResults, fetchSelectPlace } = useMapStore();
 
   useEffect(() => {
@@ -40,25 +34,7 @@ export const DraggableBottomSheet = ({
     };
   }, [isDragging, handlers]);
 
-  const renderContent = () => {
-    if (mode === "search") {
-      return (
-        <div className="flex flex-col gap-2">
-          {searchResults.map((place) => (
-            <button
-              key={place.id}
-              onClick={() => fetchSelectPlace(place)}
-              className="w-full p-3 bg-gray-50 rounded-xl text-left hover:bg-gray-100 transition">
-              <p className="font-medium text-gray-900">{place.name}</p>
-              <p className="text-sm text-gray-500">{place.address}</p>
-            </button>
-          ))}
-        </div>
-      );
-    }
-
-    return null;
-  };
+  const isExpanded = state === "middle" || state === "max";
 
   return (
     <div
@@ -76,23 +52,35 @@ export const DraggableBottomSheet = ({
         <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto" />
       </div>
 
-      {/* 검색 모드일 때 */}
-      {mode === "search" && (state === "middle" || state === "max") && (
-        <div className="px-5 flex-1 overflow-y-auto">{renderContent()}</div>
+      {/* 검색 모드 */}
+      {mode === "search" && isExpanded && (
+        <div className="px-5 flex-1 overflow-y-auto">
+          <div className="flex flex-col gap-2">
+            {searchResults.map((place) => (
+              <button
+                key={place.id}
+                onClick={() => fetchSelectPlace(place)}
+                className="w-full p-3 bg-gray-50 rounded-xl text-left hover:bg-gray-100 transition">
+                <p className="font-medium text-gray-900">{place.name}</p>
+                <p className="text-sm text-gray-500">{place.address}</p>
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
-      {/* 주변 관광지 모드일 때 - 영상만 */}
-      {mode === "nearby" && (state === "middle" || state === "max") && (
+      {/* 주변 관광지 모드 */}
+      {mode === "nearby" && isExpanded && (
         <div className={`px-5 flex-1 ${state === "max" ? "overflow-y-auto" : "overflow-hidden"}`}>
           {children}
         </div>
       )}
 
-      {/* 기본 모드일 때 (기존 header, children) */}
+      {/* 기본 모드 */}
       {mode === "spot" && (
         <>
           {header && <div className="px-5 pb-3 shrink-0">{header}</div>}
-          {children && (state === "middle" || state === "max") && (
+          {children && isExpanded && (
             <div
               className={`px-5 flex-1 ${state === "max" ? "overflow-y-auto" : "overflow-hidden"}`}>
               {children}
@@ -101,15 +89,15 @@ export const DraggableBottomSheet = ({
         </>
       )}
 
-      {/* 상세 모드일 때 */}
+      {/* 상세 모드 */}
       {mode === "detail" && (
         <div className="px-5 flex-1 overflow-y-auto">
           <SpotDetail />
         </div>
       )}
 
-      {/* 숏츠 모드일 때 */}
-      {mode === "shorts" && selectedShorts && (state === "middle" || state === "max") && (
+      {/* 숏츠 모드 */}
+      {mode === "shorts" && selectedShorts && isExpanded && (
         <div className="px-5 flex-1 overflow-y-auto">
           <ShortsDetail shorts={selectedShorts} />
         </div>

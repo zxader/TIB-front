@@ -2,17 +2,17 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { shortsApi } from "@/api";
 import type { BottomSheetState, VideoMetadata } from "@/types";
+import { useBottomSheetStore } from "@/store";
 
 // 바텀시트 드래그 훅
-export const useBottomSheet = (initialState: BottomSheetState = "middle") => {
-  const [state, setState] = useState<BottomSheetState>(initialState);
+export const useBottomSheet = () => {
+  const { state, setState } = useBottomSheetStore();
   const [dragStart, setDragStart] = useState<number | null>(null);
   const [currentY, setCurrentY] = useState(0);
 
-  // src/hooks/index.ts
   const heights: Record<BottomSheetState, number> = {
     min: 50,
-    middle: 280, // 320 → 280으로 줄임
+    middle: 280,
     max: 560,
   };
 
@@ -43,7 +43,7 @@ export const useBottomSheet = (initialState: BottomSheetState = "middle") => {
 
     setDragStart(null);
     setCurrentY(0);
-  }, [dragStart, currentY, state]);
+  }, [dragStart, currentY, state, setState]);
 
   const currentHeight = Math.max(heights.min, Math.min(560, heights[state] + currentY));
 
@@ -112,7 +112,6 @@ export const useSpotShorts = (spotId: string | null) => {
 function extractCreationDateFromMdta(bytes: Uint8Array): Date | null {
   const view = new DataView(bytes.buffer);
 
-  // keys, ilst atom 위치 찾기
   let keysOffset = -1;
   let ilstOffset = -1;
 
@@ -137,7 +136,6 @@ function extractCreationDateFromMdta(bytes: Uint8Array): Date | null {
 
   if (keysOffset === -1 || ilstOffset === -1) return null;
 
-  // keys atom 파싱
   const keysSize = view.getUint32(keysOffset, false);
   const entryCount = view.getUint32(keysOffset + 12, false);
 
@@ -162,7 +160,6 @@ function extractCreationDateFromMdta(bytes: Uint8Array): Date | null {
 
   if (creationDateIndex === -1) return null;
 
-  // ilst atom에서 값 추출
   const ilstSize = view.getUint32(ilstOffset, false);
   offset = ilstOffset + 8;
 
@@ -260,7 +257,6 @@ function extractGPS(bytes: Uint8Array): { latitude: number; longitude: number } 
 // 영상 메타데이터 추출 훅
 export const useVideoMetadata = () => {
   const extractMetadata = useCallback(async (file: File): Promise<VideoMetadata> => {
-    // 기본 메타데이터 (duration, width, height)
     const basicMetadata = await new Promise<{
       duration: number;
       width: number;
@@ -294,14 +290,12 @@ export const useVideoMetadata = () => {
       const arrayBuffer = await file.arrayBuffer();
       const bytes = new Uint8Array(arrayBuffer);
 
-      // 생성 시간: mdta 우선, 없으면 mvhd
       const creationDate = extractCreationDateFromMdta(bytes) ?? extractCreationTimeFromMvhd(bytes);
 
       if (creationDate) {
         createdAt = creationDate.toISOString();
       }
 
-      // GPS 추출
       const gpsData = extractGPS(bytes);
       if (gpsData) {
         latitude = gpsData.latitude;
@@ -311,7 +305,6 @@ export const useVideoMetadata = () => {
       // 메타데이터 추출 실패 시 무시
     }
 
-    // 폴백: 파일 수정 시간
     if (!createdAt && file.lastModified) {
       createdAt = new Date(file.lastModified).toISOString();
     }
